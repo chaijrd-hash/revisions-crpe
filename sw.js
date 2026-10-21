@@ -1,5 +1,5 @@
 /* Service worker : met le site en cache pour un usage hors ligne (réseau d'abord, cache en secours). */
-const CACHE = 'rayen-v1792586809';
+const CACHE = 'rayen-v1792587155';
 const ASSETS = [
   './', 'index.html', 'css/style.css', 'js/app.js',
   'js/data/maths.js', 'js/data/maths2.js', 'js/data/francais.js', 'js/data/francais2.js',

@@ -17,6 +17,7 @@
   });
   function lessonSubjects() { return SUBJECTS.filter(function (s) { return !s.tab; }); }
   /* ---------- Sessions : un code d'accès = une session séparée (progression, discussions, brouillons) ---------- */
+  var ACA_DEFAULT = window.CRPE_ACADEMIE != null ? window.CRPE_ACADEMIE : 'Créteil'; // académie par défaut ('' = aucune)
   var STANDALONE = !(window.claude && typeof window.claude.use === 'function'); // site autonome : pas de prof IA ni de sauvegarde en ligne
   var SESSIONS = window.CRPE_SESSIONS || [
     { hash: 'c2f1c1cb6a0d8a0b13587bfd48582252af7895a80ffff0f0a43a47622f5d6c08', id: '', name: 'Session 1' },
@@ -2429,7 +2430,7 @@
   function countdownCard() {
     var dE = daysTo(EXAM), dR = daysTo(REG), ps = planStatus();
     return '<a class="card count-card" href="#/planning"><div class="count-num"><b>J-' + Math.max(0, dE) + '</b><small>avant les écrits</small></div><div class="count-txt">' +
-      (dR >= 0 ? '<span class="badge warn">📝 Inscription (' + esc(state.flags.academie || 'Créteil') + ') avant le 25 novembre à midi · J-' + dR + '</span>' : '') +
+      (dR >= 0 ? '<span class="badge warn">📝 Inscription' + ((state.flags.academie || ACA_DEFAULT) ? ' (' + esc(state.flags.academie || ACA_DEFAULT) + ')' : '') + ' avant le 25 novembre à midi · J-' + dR + '</span>' : '') +
       '<span class="badge ' + ps.st.c + '">' + ps.st.t + '</span><small>Voir mon planning semaine par semaine →</small></div></a>';
   }
   function viewPlanning() {
@@ -2444,7 +2445,7 @@
     html += '<div class="card"><label for="domSel"><b>Mon domaine pour l’écrit 2</b></label><select id="domSel" class="dom-sel"><option value="">Pas encore choisi (je révise les 3)</option>' +
       Object.keys(DOMAINS).map(function (k) { return '<option value="' + k + '"' + (state.flags.domain === k ? ' selected' : '') + '>' + DOMAINS[k] + '</option>'; }).join('') + '</select>' +
       '<p class="small muted">Ce choix adapte ton planning, tes chapitres du soir et le test du jour.</p>' +
-      '<label for="acaSel"><b>Mon académie</b></label><input id="acaSel" class="dom-sel" type="text" value="' + esc(state.flags.academie || 'Créteil') + '">' +
+      '<label for="acaSel"><b>Mon académie</b></label><input id="acaSel" class="dom-sel" type="text" value="' + esc(state.flags.academie || ACA_DEFAULT) + '" placeholder="Ex. : Lyon, Versailles…">' +
       '<p class="small muted">Les oraux sont organisés par ton académie : surveille son site et ta convocation après les écrits.</p></div>';
     html += '<h2>Les grandes étapes</h2><ol class="phases">' + PHASES.map(function (ph) {
       var cur = now >= ph.from && now <= new Date(ph.to.getTime() + 864e5), past = now > new Date(ph.to.getTime() + 864e5);
@@ -2466,8 +2467,8 @@
       '<div class="tbl weeks"><table><tr><th>Sem.</th><th>Début</th><th>Objectif</th><th>Fait</th><th></th></tr>' + rows + '</table></div>' +
       '<p class="small muted">Dates de la session 2027 relevées sur des sites de préparation : vérifie-les sur le site officiel.</p>';
     app.innerHTML = html;
-    if (!state.flags.academie) { state.flags.academie = 'Créteil'; save(); }
-    document.getElementById('acaSel').addEventListener('change', function () { state.flags.academie = this.value.trim() || 'Créteil'; save(); toast('Académie enregistrée : ' + state.flags.academie); });
+    if (!state.flags.academie && ACA_DEFAULT) { state.flags.academie = ACA_DEFAULT; save(); }
+    document.getElementById('acaSel').addEventListener('change', function () { state.flags.academie = this.value.trim() || ACA_DEFAULT; save(); toast(state.flags.academie ? 'Académie enregistrée : ' + state.flags.academie : 'Académie effacée'); });
     document.getElementById('domSel').addEventListener('change', function () {
       state.flags.domain = this.value || null;
       if (state.daily) state.daily.plan = null;
@@ -2628,7 +2629,7 @@
       if (h >= 17 && pl && pl.length) notifyOnce('soir/' + d, '🌙', 'Programme de ce soir : ' + pl.map(function (o) { return plain(o.c.title); }).join(' + ') + '.', '#/');
       if (STANDALONE && !isEmptyState(state) && Date.now() - (state.flags.lastBackup || 0) > 7 * 864e5) notifyOnce('bk/' + Math.floor(d / 7), '💾', 'Pense à télécharger ta sauvegarde (onglet Progrès) pour ne jamais perdre ta progression.', '#/progression');
       var dR = daysTo(REG);
-      if (dR >= 0 && (dR <= 7 || dR % 7 === 0)) notifyOnce('reg/' + d, '📝', 'Inscription au CRPE (Créteil) sur Cyclades avant le 25 novembre à midi : J-' + dR + '.', '#/planning');
+      if (dR >= 0 && (dR <= 7 || dR % 7 === 0)) notifyOnce('reg/' + d, '📝', 'Inscription au CRPE' + ((state.flags.academie || ACA_DEFAULT) ? ' (' + (state.flags.academie || ACA_DEFAULT) + ')' : '') + ' sur Cyclades avant le 25 novembre à midi : J-' + dR + '.', '#/planning');
       var ps = planStatus();
       if (ps.st.c === 'ko' && new Date().getDay() === 1) notifyOnce('retard/' + d, '⚠️', 'Planning : ' + ps.st.t.replace(/^⚠️\s*/, '') + '. On rattrape ce soir ?', '#/planning');
       SUBJECTS.forEach(function (sj) {
