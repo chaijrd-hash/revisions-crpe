@@ -25,12 +25,13 @@
   ];
   var PROFILE = '';
   try { PROFILE = localStorage.getItem('crpe-profile') || ''; } catch (e) {}
+  if (window.CRPE_PROFILE) PROFILE = window.CRPE_PROFILE; // site autonome hébergé à côté d'un autre : données toujours séparées
   if (!SESSIONS.some(function (x) { return x.id === PROFILE; })) PROFILE = '';
   var SESSION = SESSIONS.filter(function (x) { return x.id === PROFILE; })[0];
   if (PROFILE) (function () {
     // les données de la session 2 sont rangées à part (préfixe p2:) : les deux sessions ne se mélangent jamais
     var P = 'p' + PROFILE + ':', sp = Storage.prototype, g = sp.getItem, st = sp.setItem, r = sp.removeItem;
-    var map = function (k) { k = String(k); return k.indexOf('crpe') === 0 && !/^crpe-(l3-access|profile|theme|voice)$/.test(k) ? P + k : k; };
+    var map = function (k) { k = String(k); return k.indexOf('crpe') === 0 && !/^crpe-(l3-access(-\d+)?|profile|theme|voice)$/.test(k) ? P + k : k; };
     sp.getItem = function (k) { return g.call(this, map(k)); };
     sp.setItem = function (k, v) { return st.call(this, map(k), v); };
     sp.removeItem = function (k) { return r.call(this, map(k)); };
@@ -2548,7 +2549,7 @@
      Protection légère côté navigateur : elle évite qu'un visiteur de passage entre sur le site,
      mais ce n'est pas une sécurité forte (le contenu reste dans les fichiers du site). */
   var ACCESS_HASH = SESSION.hash;
-  var ACCESS_KEY = 'crpe-l3-access';
+  var ACCESS_KEY = 'crpe-l3-access' + (window.CRPE_PROFILE ? '-' + window.CRPE_PROFILE : '');
   function sha256Hex(txt) {
     if (!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.reject(new Error('crypto'));
     return crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt)).then(function (buf) {
@@ -2649,7 +2650,7 @@
     var foot = document.querySelector('.foot');
     if (foot && foot.textContent.indexOf('Session') < 0) foot.textContent += ' · ' + SESSION.name;
     var brand = document.querySelector('.brand');
-    if (brand && PROFILE && !brand.querySelector('.ses')) brand.insertAdjacentHTML('beforeend', ' <small class="ses">' + esc(SESSION.short || SESSION.name) + '</small>');
+    if (brand && PROFILE && (SESSION.short || !STANDALONE) && !brand.querySelector('.ses')) brand.insertAdjacentHTML('beforeend', ' <small class="ses">' + esc(SESSION.short || SESSION.name) + '</small>');
     document.body.classList.remove('locked');
     window.addEventListener('hashchange', route);
     markActiveDay();
